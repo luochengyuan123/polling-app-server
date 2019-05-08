@@ -1,6 +1,7 @@
 // 测试环境Jenkinsfile
 def envKey = env.JOB_NAME.substring(0, 1)
 
+
 def projectName, targetDir, mvnArgs = ""
 if (params.subProject != null) {
     projectName = params.subProject.trim()
@@ -40,11 +41,16 @@ node('jenkins-jnlp') {
     }
 
 
-    stage('Build docker image') {
-	    echo "Build docker image and push"
-        dir('/var/jenkins_home/workspace/build_docker') {
-            docker.withRegistry("https://${registryUrl}", "${registryCredential}") {
-                def image = docker.build("${registryUrl}/${namespace}/${projectName}:${imageTag}", ".")
+    stage('Test') {
+      echo "2.Test Stage"
+      echo "${projectName}"
+      echo "${gitBranch}"
+    }
+    stage('Build & Push Image') {
+        echo "4.Push Docker Image Stage"
+        dir("/home/jenkins/workspace/${jobName}") {
+           docker.withRegistry("https://${registryUrl}", "${registryCredential}") {
+                def image = docker.build("${registryUrl}/payeco/${image}", ".")
                 image.push()
             }
         }
