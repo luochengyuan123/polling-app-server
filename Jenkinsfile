@@ -13,12 +13,13 @@ def registryCredential = "harbor"
 
 
 node('jenkins-jnlp') {
-    stage('Prepare') {
-        echo "git clone gitlab"
-        checkout scm
-        def  mvnHome = tool 'M3'
-    }
 
+    stage('Preparation') {
+        echo "git clone gitlab"
+        def mvnHome
+        git branch: gitBranch, credentialsId: gitCredential, url: gitUrl
+        mvnHome = tool 'M3'
+    }
     stage('Maven build') {
 	    echo "mvn jar"
         sh "'${mvnHome}/bin/mvn' clean package -Dmaven.test.skip=true"
