@@ -1,16 +1,20 @@
 // 测试环境Jenkinsfile
-def envKey = env.JOB_NAME.substring(0, 1)
+def envKey = env.JOB_NAME.substring(0,1)
+def domainName, namespace, portPrefix, springConfigLabel, serviceAddr
+switch (envKey) {
+    case "d":
+       domainName = "d.haimaxy.com"
+       namespace = "oliver-dev"
+       break
+    default:
+        println("No matching case found!!")
 
-
-def projectName, targetDir, mvnArgs = ""
-if (params.subProject != null) {
-    projectName = params.subProject.trim()
-    targetDir = "${projectName}/target"
-    mvnArgs = "-pl ${projectName} -am -amd"
-} else {
-    projectName = env.JOB_NAME.substring(2, env.JOB_NAME.length())
-    targetDir = "target"
 }
+def registryUrl = "harbor.haimaxy.com"
+def registryCredential = "harbor"
+def projectName = env.JOB_NAME.substring(2, env.JOB_NAME.length())
+def jobName = env.JOB_NAME.trim()
+def gitBranch = params.BRANCH.trim()
 
 def gitUrl = "https://github.com/luochengyuan123/${env.JOB_NAME.substring(2, env.JOB_NAME.length())}.git"
 def gitCredential = "gitlabjenkins"
@@ -25,22 +29,22 @@ def image = "${registryUrl}/${imageEndpoint}"
 def registryCredential = "harbor"
 
 
+
+
+
+
 node('jenkins-jnlp') {
-    echo "git clone gitlab"
-    def mvnHome
-    stage('Preparation') {
-        git branch: gitBranch, credentialsId: gitCredential, url: gitUrl
-        mvnHome = tool 'M3'
+    stage('Prepare') {
+        echo "1.Prepare Stage"
+        checkout scm
+        script {
+            if (${gitBranch} != 'master') {
+                imageTag = "${gitBranch}-${imageTag}"
+            }
+			sh "'${mvnHome}/bin/mvn' clean package -Dmaven.test.skip=true"
+            archive 'target/*.jar'
+        }
     }
-
-    stage('Maven build') {
-	    echo "mvn jar"
-        sh "'${mvnHome}/bin/mvn' clean package -Dmaven.test.skip=true"
-        archive 'target/*.jar'
-
-    }
-
-
     stage('Test') {
       echo "2.Test Stage"
       echo "${projectName}"
@@ -50,12 +54,11 @@ node('jenkins-jnlp') {
         echo "4.Push Docker Image Stage"
         dir("/home/jenkins/workspace/${jobName}") {
            docker.withRegistry("https://${registryUrl}", "${registryCredential}") {
-                def image = docker.build("${registryUrl}/payeco/${image}", ".")
-                image.push()
+                def images = docker.build("${image}:${imageTag}", ".")
+                images.push()
             }
         }
     }
-
     stage('Deploy to k8s') {
         echo "5. Deploy Stage"
         if (env.BRANCH_NAME == 'master') {
@@ -65,5 +68,4 @@ node('jenkins-jnlp') {
         sh "sed -i 's/<IMAGE_TAG>/${imageTag}/' k8s.yaml"
         sh "kubectl apply -f k8s.yaml --record"
     }
-
 }
