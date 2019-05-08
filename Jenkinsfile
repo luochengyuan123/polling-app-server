@@ -12,25 +12,15 @@ switch (envKey) {
 }
 def registryUrl = "harbor.haimaxy.com"
 def registryCredential = "harbor"
+
 def projectName = env.JOB_NAME.substring(2, env.JOB_NAME.length())
 def jobName = env.JOB_NAME.trim()
 def gitBranch = params.BRANCH.trim()
-
 def gitUrl = "https://github.com/luochengyuan123/${env.JOB_NAME.substring(2, env.JOB_NAME.length())}.git"
 def gitCredential = "gitlabjenkins"
-def gitBranch = params.BRANCH.trim()
-def projectName = env.JOB_NAME.substring(2, env.JOB_NAME.length())
 def imageTag = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-def registryUrl = "harbor.haimaxy.com"
 def imageEndpoint = "payeco/${projectName}"
 def image = "${registryUrl}/${imageEndpoint}"
-
-
-def registryCredential = "harbor"
-
-
-
-
 
 
 node('jenkins-jnlp') {
@@ -41,7 +31,7 @@ node('jenkins-jnlp') {
             if (${gitBranch} != 'master') {
                 imageTag = "${gitBranch}-${imageTag}"
             }
-			sh "'${mvnHome}/bin/mvn' clean package -Dmaven.test.skip=true"
+            sh "'${mvnHome}/bin/mvn' clean package -Dmaven.test.skip=true"
             archive 'target/*.jar'
         }
     }
