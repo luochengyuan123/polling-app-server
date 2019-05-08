@@ -46,7 +46,6 @@ node('jenkins-jnlp') {
         if (env.BRANCH_NAME == 'master') {
             input "确认要部署线上环境吗？"
         }
-        <IMAGE>:<IMAGE_TAG>
         sh "sed -i 's/<IMAGE>/${image}/' k8s.yaml"
         sh "sed -i 's/<IMAGE_TAG>/${imageTag}/' k8s.yaml"
         sh "kubectl apply -f k8s.yaml --record"
