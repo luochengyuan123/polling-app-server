@@ -1,8 +1,21 @@
 // 测试环境Jenkinsfile
-def projectName = env.JOB_NAME.substring(2, env.JOB_NAME.length())
-def gitUrl = "https://github.com/luochengyuan123/${projectName}.git"
+def envKey = env.JOB_NAME.substring(0, 1)
+
+
+def projectName, targetDir, mvnArgs = ""
+if (params.subProject != null) {
+    projectName = params.subProject.trim()
+    targetDir = "${projectName}/target"
+    mvnArgs = "-pl ${projectName} -am -amd"
+} else {
+    projectName = env.JOB_NAME.substring(2, env.JOB_NAME.length())
+    targetDir = "target"
+}
+
+def gitUrl = "https://github.com/luochengyuan123/${env.JOB_NAME.substring(2, env.JOB_NAME.length())}.git"
 def gitCredential = "gitlabjenkins"
 def gitBranch = params.BRANCH.trim()
+def projectName = env.JOB_NAME.substring(2, env.JOB_NAME.length())
 def imageTag = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
 def registryUrl = "harbor.haimaxy.com"
 def imageEndpoint = "payeco/${projectName}"
@@ -13,13 +26,13 @@ def registryCredential = "harbor"
 
 
 node('jenkins-jnlp') {
-
+    echo "git clone gitlab"
+    def mvnHome
     stage('Preparation') {
-        echo "git clone gitlab"
-        def mvnHome
         git branch: gitBranch, credentialsId: gitCredential, url: gitUrl
         mvnHome = tool 'M3'
     }
+
     stage('Maven build') {
 	    echo "mvn jar"
         sh "'${mvnHome}/bin/mvn' clean package -Dmaven.test.skip=true"
@@ -37,8 +50,8 @@ node('jenkins-jnlp') {
         echo "4.Push Docker Image Stage"
         dir("/home/jenkins/workspace/${jobName}") {
            docker.withRegistry("https://${registryUrl}", "${registryCredential}") {
-                def images = docker.build("${image}:${imageTag}", ".")
-                images.push()
+                def image = docker.build("${registryUrl}/payeco/${image}", ".")
+                image.push()
             }
         }
     }
