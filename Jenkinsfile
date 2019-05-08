@@ -13,9 +13,10 @@ def registryCredential = "harbor"
 
 
 node('jenkins-jnlp') {
-    echo "git clone gitlab"
-    checkout scm
-    def  mvnHome = tool 'M3'
+    stage('Prepare') {
+        echo "git clone gitlab"
+        checkout scm
+        def  mvnHome = tool 'M3'
     }
 
     stage('Maven build') {
