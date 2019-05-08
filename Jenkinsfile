@@ -1,5 +1,4 @@
 // 测试环境Jenkinsfile
-
 def projectName = env.JOB_NAME.substring(2, env.JOB_NAME.length())
 def gitUrl = "https://github.com/luochengyuan123/${projectName}.git"
 def gitCredential = "gitlabjenkins"
@@ -36,8 +35,8 @@ node('jenkins-jnlp') {
         echo "4.Push Docker Image Stage"
         dir("/home/jenkins/workspace/${jobName}") {
            docker.withRegistry("https://${registryUrl}", "${registryCredential}") {
-                def image = docker.build("${image}:${imageTag}", ".")
-                image.push()
+                def images = docker.build("${image}:${imageTag}", ".")
+                images.push()
             }
         }
     }
